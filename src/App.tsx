@@ -1,5 +1,11 @@
+import {
+  GoogleAuthProvider,
+  getAdditionalUserInfo,
+  signInWithPopup,
+} from 'firebase/auth'
 import { useState } from 'react'
 import { Button } from './components/button'
+import { auth, provider } from './config/firebase'
 import logo from './logo.svg'
 
 function App() {
@@ -12,9 +18,17 @@ function App() {
       <Button
         type="button"
         variant="destructive"
-        onClick={() => setCount((count) => count + 1)}
+        onClick={() =>
+          signInWithPopup(auth, provider).then((result) => {
+            const credential = GoogleAuthProvider.credentialFromResult(result)
+            const userInfo = getAdditionalUserInfo(result)
+
+            console.log(credential)
+            console.log(userInfo)
+          })
+        }
       >
-        Count is: {count}
+        Login
       </Button>
       <p>
         Edit <code className="p-1 bg-gray-600 rounded-md">App.tsx</code> and
