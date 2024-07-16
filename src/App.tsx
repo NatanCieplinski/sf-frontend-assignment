@@ -9,7 +9,7 @@ function App() {
     <div className="flex flex-col gap-8 p-20  h-screen">
       {user && (
         <div className="flex justify-between w-full">
-          <div className="text-2xl font-bold">Welcome {user.name}</div>
+          <div className="text-2xl font-bold">My Quotes</div>
           <Button onClick={() => logout()}>
             <LogOutIcon />
           </Button>

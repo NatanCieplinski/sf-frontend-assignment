@@ -1,7 +1,9 @@
 import {
   GoogleAuthProvider,
+  UserCredential,
+  createUserWithEmailAndPassword,
   getAdditionalUserInfo,
-  signInWithPopup,
+  signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
 import {
@@ -11,8 +13,9 @@ import {
   useEffect,
   useState,
 } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { auth, provider } from '../config/firebase'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { auth } from '../config/firebase'
 
 export type UserInfo = {
   name: string
@@ -22,37 +25,55 @@ export type UserInfo = {
 
 const AuthContext = createContext<{
   user: UserInfo | null
-  login: () => void
+  login: (email: string, password: string) => void
+  register: (email: string, password: string) => void
   logout: () => void
 } | null>(null)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate()
-  const location = useLocation()
   const [user, setUser] = useState<UserInfo | null>(null)
 
-  const login = () => {
-    signInWithPopup(auth, provider).then((result) => {
-      const credential = GoogleAuthProvider.credentialFromResult(result)
-      const userInfo = getAdditionalUserInfo(result)
+  const processAuthentication = (userCredential: UserCredential) => {
+    const credential = GoogleAuthProvider.credentialFromResult(userCredential)
+    const userInfo = getAdditionalUserInfo(userCredential)
 
-      console.log(credential)
-      console.log(userInfo)
+    const user = {
+      name: (userInfo?.profile?.given_name as string) ?? '',
+      surname: (userInfo?.profile?.family_name as string) ?? '',
+      email: (userInfo?.profile?.email as string) ?? '',
+    }
 
-      const user = {
-        name: (userInfo?.profile?.given_name as string) ?? '',
-        surname: (userInfo?.profile?.family_name as string) ?? '',
-        email: (userInfo?.profile?.email as string) ?? '',
-      }
+    setUser(user)
+    localStorage.setItem('user', JSON.stringify(user))
 
-      setUser(user)
-      localStorage.setItem('user', JSON.stringify(user))
+    if (credential?.accessToken) {
+      localStorage.setItem('token', credential.accessToken)
+    }
+    navigate('/')
+  }
 
-      if (credential?.accessToken) {
-        localStorage.setItem('token', credential.accessToken)
-      }
-      navigate('/')
-    })
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await signInWithEmailAndPassword(auth, email, password)
+      processAuthentication(response)
+    } catch {
+      toast.error('Error logging in')
+    }
+  }
+
+  const register = async (email: string, password: string) => {
+    try {
+      const response = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      )
+
+      processAuthentication(response)
+    } catch {
+      toast.error('Error registering')
+    }
   }
 
   const logout = async () => {
@@ -68,10 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const user = localStorage.getItem('user')
 
     if (!token || !user) {
-      if (location.pathname !== '/login') {
-        login()
-      }
-
       return
     }
 
@@ -79,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

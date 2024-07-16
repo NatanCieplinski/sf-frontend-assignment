@@ -4,6 +4,7 @@ import { QueryParamProvider } from 'use-query-params'
 import { ReactRouter6Adapter } from 'use-query-params/adapters/react-router-6'
 import App from '../App'
 import { Login } from '../features/Login'
+import { Register } from '../features/Register'
 import { AuthProvider, useAuth } from '../providers/AuthProvider'
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
       {
         path: 'login',
         element: <Login />,
+      },
+      {
+        path: 'register',
+        element: <Register />,
       },
     ],
   },

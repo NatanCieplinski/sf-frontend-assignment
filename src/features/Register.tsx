@@ -13,26 +13,26 @@ import {
 import { Input } from '../components/input'
 import { useAuth } from '../providers/AuthProvider'
 
-const loginSchema = z.object({
+const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 })
 
-type LoginForm = z.infer<typeof loginSchema>
+type RegisterForm = z.infer<typeof registerSchema>
 
-export const Login = () => {
-  const { login } = useAuth()
+export const Register = () => {
+  const { register } = useAuth()
 
-  const form = useForm<LoginForm>({
+  const form = useForm<RegisterForm>({
     defaultValues: {
       email: '',
       password: '',
     },
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(registerSchema),
   })
 
-  const onSubmit = (data: LoginForm) => {
-    login(data.email, data.password)
+  const onSubmit = (data: RegisterForm) => {
+    register(data.email, data.password)
   }
 
   return (
