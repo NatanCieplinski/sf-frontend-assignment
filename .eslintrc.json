@@ -16,6 +16,7 @@
     "prettier/prettier": "error",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-namespace": "off",
     "no-console": "warn",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",

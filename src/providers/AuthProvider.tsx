@@ -38,6 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const credential = GoogleAuthProvider.credentialFromResult(userCredential)
     const userInfo = getAdditionalUserInfo(userCredential)
 
+    console.log(credential, userInfo)
+
     const user = {
       name: (userInfo?.profile?.given_name as string) ?? '',
       surname: (userInfo?.profile?.family_name as string) ?? '',
@@ -58,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await signInWithEmailAndPassword(auth, email, password)
       processAuthentication(response)
     } catch {
-      toast.error('Error logging in')
+      toast.error('Error logging in', { duration: Infinity })
     }
   }
 
@@ -72,7 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       processAuthentication(response)
     } catch {
-      toast.error('Error registering')
+      toast.error('Error registering', { duration: Infinity })
     }
   }
 

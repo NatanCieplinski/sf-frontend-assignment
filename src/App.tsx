@@ -9,8 +9,8 @@ function App() {
     <div className="flex flex-col gap-8 p-20  h-screen">
       {user && (
         <div className="flex justify-between w-full">
-          <div className="text-2xl font-bold">My Quotes</div>
-          <Button onClick={() => logout()}>
+          <h1 className="text-2xl font-bold">My Quotes</h1>
+          <Button onClick={() => logout()} data-testid="logout">
             <LogOutIcon />
           </Button>
         </div>

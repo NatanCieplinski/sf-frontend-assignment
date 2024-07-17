@@ -65,7 +65,7 @@ export const Login = () => {
               </FormItem>
             )}
           />
-          <Button>Login</Button>
+          <Button type="submit">Login</Button>
         </form>
       </Form>
     </div>
