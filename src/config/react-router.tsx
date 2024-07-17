@@ -1,3 +1,4 @@
+import { Toaster } from '@/components/sonner'
 import { ReactNode } from 'react'
 import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom'
 import { QueryParamProvider } from 'use-query-params'
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
         <AuthProvider>
           <Outlet />
         </AuthProvider>
+        <Toaster />
       </QueryParamProvider>
     ),
     children: [
