@@ -1,6 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
+import { addDoc, collection, getDocs } from 'firebase/firestore'
 import { LogOutIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '../components/button'
 import {
@@ -19,6 +22,8 @@ import {
   FormMessage,
 } from '../components/form'
 import { Input } from '../components/input'
+import { auth, db } from '../config/firebase'
+import { queryClient } from '../config/react-query'
 import { useAuth } from '../providers/AuthProvider'
 
 export const App = () => {
@@ -34,7 +39,58 @@ export const App = () => {
           </Button>
         </div>
       )}
-      <CreateQuoteForm />
+      <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+        <div className="order-2 md:order-1">
+          <QuoteList />
+        </div>
+        <div className="order-1 md:order-2">
+          <CreateQuoteForm />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type Quote = {
+  id: string
+  content: string
+  author: string
+}
+
+const QuoteList = () => {
+  const query = useQuery({
+    queryKey: ['quotes'],
+    queryFn: async (): Promise<Quote[]> => {
+      const quoteDocuments = await getDocs(
+        collection(db, 'users', auth.currentUser!.uid, 'quotes')
+      )
+      const quotes = quoteDocuments.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+
+      return quotes as Quote[]
+    },
+  })
+
+  if (!query.data) return null
+
+  return (
+    <div className="flex flex-col gap-4">
+      {query.data.map((quote) => (
+        <QuoteBox key={quote.id} quote={quote} />
+      ))}
+    </div>
+  )
+}
+
+const QuoteBox = ({ quote }: { quote: Quote }) => {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm italic">{`"${quote.content}"`}</p>
+      <p className="flex justify-end w-full text-sm font-semibold text-gray-500">
+        {`— ${quote.author}`}
+      </p>
     </div>
   )
 }
@@ -55,8 +111,17 @@ const CreateQuoteForm = () => {
     resolver: zodResolver(createQuoteSchema),
   })
 
-  const onSubmit = (data: CreateQuoteForm) => {
-    console.log(data)
+  const onSubmit = async (data: CreateQuoteForm) => {
+    try {
+      await addDoc(collection(db, 'users', auth.currentUser!.uid, 'quotes'), {
+        content: data.content,
+        author: data.author,
+      })
+      form.reset()
+      queryClient.invalidateQueries({ queryKey: ['quotes'] })
+    } catch {
+      toast.error('Failed to create quote')
+    }
   }
 
   return (

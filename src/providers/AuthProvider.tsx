@@ -2,10 +2,13 @@ import {
   GoogleAuthProvider,
   UserCredential,
   createUserWithEmailAndPassword,
+  deleteUser,
   getAdditionalUserInfo,
+  getAuth,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 import {
   ReactNode,
   createContext,
@@ -15,7 +18,7 @@ import {
 } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { auth } from '../config/firebase'
+import { auth, db } from '../config/firebase'
 
 export type UserInfo = {
   name: string
@@ -35,6 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserInfo | null>(null)
 
   const processAuthentication = (userCredential: UserCredential) => {
+    console.log(userCredential)
+
     const credential = GoogleAuthProvider.credentialFromResult(userCredential)
     const userInfo = getAdditionalUserInfo(userCredential)
 
@@ -72,9 +77,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password
       )
 
+      const uid = response.user?.uid
+      await setDoc(doc(db, 'users', uid), { email })
+
       processAuthentication(response)
-    } catch {
-      toast.error('Error registering', { duration: Infinity })
+    } catch (error) {
+      const auth = getAuth()
+      const user = auth.currentUser
+
+      if (user) {
+        deleteUser(user)
+      }
+
+      console.log({ error })
+
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Email already in use', { duration: 8000 })
+      } else {
+        toast.error('Error registering', { duration: 8000 })
+      }
     }
   }
 
