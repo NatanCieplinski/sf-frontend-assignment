@@ -37,18 +37,22 @@ import { queryClient } from '../config/react-query'
 import { useAuth } from '../providers/AuthProvider'
 
 export const App = () => {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
 
   return (
     <div className="flex flex-col gap-8 p-8 h-screen md:p-14 lg:p-20">
-      {user && (
-        <div className="flex justify-between w-full">
-          <h1 className="text-2xl font-bold">My Quotes</h1>
-          <Button onClick={() => logout()} data-testid="logout" size="icon">
-            <LogOutIcon className="w-4 h-4" />
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-between w-full">
+        <h1 className="text-2xl font-bold">My Quotes</h1>
+        <Button
+          onClick={() => logout()}
+          data-testid="logout"
+          size="icon"
+          variant="ghost"
+        >
+          <LogOutIcon className="w-4 h-4" />
+        </Button>
+      </div>
+
       <div className="flex flex-col gap-10 h-full md:grid md:grid-cols-2">
         <div className="overflow-scroll order-2 md:order-1 no-scrollbar">
           <QuoteSection />

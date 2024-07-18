@@ -1,28 +1,17 @@
 import {
-  GoogleAuthProvider,
-  UserCredential,
   createUserWithEmailAndPassword,
   deleteUser,
-  getAdditionalUserInfo,
   getAuth,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
+import { ReactNode, createContext, useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { auth, db } from '../config/firebase'
 
 export type UserInfo = {
-  name: string
-  surname: string
   email: string
 }
 
@@ -37,33 +26,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate()
   const [user, setUser] = useState<UserInfo | null>(null)
 
-  const processAuthentication = (userCredential: UserCredential) => {
-    console.log(userCredential)
-
-    const credential = GoogleAuthProvider.credentialFromResult(userCredential)
-    const userInfo = getAdditionalUserInfo(userCredential)
-
-    console.log(credential, userInfo)
+  const processAuthentication = () => {
+    const userInfo = getAuth().currentUser
 
     const user = {
-      name: (userInfo?.profile?.given_name as string) ?? '',
-      surname: (userInfo?.profile?.family_name as string) ?? '',
-      email: (userInfo?.profile?.email as string) ?? '',
+      email: (userInfo?.email as string) ?? '',
     }
 
     setUser(user)
-    localStorage.setItem('user', JSON.stringify(user))
-
-    if (credential?.accessToken) {
-      localStorage.setItem('token', credential.accessToken)
-    }
     navigate('/')
   }
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await signInWithEmailAndPassword(auth, email, password)
-      processAuthentication(response)
+      await signInWithEmailAndPassword(auth, email, password)
+      processAuthentication()
     } catch {
       toast.error('Error logging in', { duration: Infinity })
     }
@@ -80,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const uid = response.user?.uid
       await setDoc(doc(db, 'users', uid), { email })
 
-      processAuthentication(response)
+      processAuthentication()
     } catch (error) {
       const auth = getAuth()
       const user = auth.currentUser
@@ -88,8 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         deleteUser(user)
       }
-
-      console.log({ error })
 
       if (error.code === 'auth/email-already-in-use') {
         toast.error('Email already in use', { duration: 8000 })
@@ -106,17 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token')
     navigate('/login')
   }
-
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    const user = localStorage.getItem('user')
-
-    if (!token || !user) {
-      return
-    }
-
-    setUser(JSON.parse(user))
-  }, [])
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout }}>
