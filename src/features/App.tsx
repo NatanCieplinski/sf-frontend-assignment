@@ -114,6 +114,7 @@ const QuoteSection = () => {
           if (e.target.value === '') return setQueryParam({ search: null })
           setQueryParam({ search: e.target.value })
         }}
+        data-testid="search-filter"
       />
       {quoteListQuery.data && (
         <div className="flex overflow-scroll flex-col gap-4 pb-8 h-full md:pb-14 lg:pb-20 no-scrollbar">
@@ -141,10 +142,18 @@ const QuoteBox = ({ quote }: { quote: Quote }) => {
   return (
     <div className="flex items-center rounded-md border">
       <div className="flex flex-col gap-2 py-2 px-4 w-full">
-        <p className="text-sm italic">{`"${quote.content}"`}</p>
+        <p
+          className="text-sm italic"
+          data-testid="quote-content"
+        >{`"${quote.content}"`}</p>
         <div className="flex justify-between items-end w-full text-sm font-semibold text-gray-500">
-          <p>{`— ${quote.author}`}</p>
-          <Button size="icon-sm" variant="ghost" onClick={handleCopy}>
+          <p data-testid="quote-author">{`— ${quote.author}`}</p>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={handleCopy}
+            data-testid="copy-quote"
+          >
             {wasCopied ? (
               <ClipboardCheck className="w-4 h-4" />
             ) : (
@@ -244,7 +253,11 @@ const CreateQuoteForm = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="w-full"
+        data-testid="create-quote-form"
+      >
         <Card>
           <CardHeader>
             <CardTitle>Add Quote</CardTitle>

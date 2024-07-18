@@ -10,11 +10,12 @@
 // ***********************************************
 //
 
-Cypress.Commands.add('login', (email: string, password: string) => {
-  cy.visit('http://localhost:3000')
-  cy.get('input[name="email"]').type(email)
-  cy.get('input[name="password"]').type(password)
+Cypress.Commands.add('login', () => {
+  cy.visit('http://localhost:3000/login')
+  cy.get('input[name="email"]').type('test@test.com')
+  cy.get('input[name="password"]').type('password')
   cy.get('button[type="submit"]').click()
+  cy.wait(2000)
 })
 
 Cypress.Commands.add('getToast', () => {
@@ -24,7 +25,7 @@ Cypress.Commands.add('getToast', () => {
 declare global {
   namespace Cypress {
     interface Chainable {
-      login(email: string, password: string): Chainable<void>
+      login(): Chainable<void>
       getToast(): Chainable<JQuery<HTMLElement>>
     }
   }
