@@ -15,6 +15,15 @@ export type UserInfo = {
   email: string
 }
 
+class FirebaseError extends Error {
+  code: string
+
+  constructor(message: string, code: string) {
+    super(message)
+    this.code = code
+  }
+}
+
 const AuthContext = createContext<{
   user: UserInfo | null
   login: (email: string, password: string) => void
@@ -66,7 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         deleteUser(user)
       }
 
-      if (error.code === 'auth/email-already-in-use') {
+      if (
+        error instanceof FirebaseError &&
+        error.code === 'auth/email-already-in-use'
+      ) {
         toast.error('Email already in use', { duration: 8000 })
       } else {
         toast.error('Error registering', { duration: 8000 })
