@@ -4,6 +4,8 @@ import { addDoc, collection, getDocs } from 'firebase/firestore'
 import { LogOutIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { StringParam, useQueryParams } from 'use-query-params'
+import { useMediaQuery } from 'usehooks-ts'
 import { z } from 'zod'
 import { Button } from '../components/button'
 import {
@@ -14,6 +16,13 @@ import {
   CardTitle,
 } from '../components/card'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerTrigger,
+} from '../components/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -22,6 +31,7 @@ import {
   FormMessage,
 } from '../components/form'
 import { Input } from '../components/input'
+import { Textarea } from '../components/textarea'
 import { auth, db } from '../config/firebase'
 import { queryClient } from '../config/react-query'
 import { useAuth } from '../providers/AuthProvider'
@@ -39,9 +49,9 @@ export const App = () => {
           </Button>
         </div>
       )}
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-        <div className="order-2 md:order-1">
-          <QuoteList />
+      <div className="flex flex-col gap-10 h-full md:grid md:grid-cols-2">
+        <div className="overflow-scroll order-2 md:order-1 no-scrollbar">
+          <QuoteSection />
         </div>
         <div className="order-1 md:order-2">
           <CreateQuoteForm />
@@ -57,29 +67,56 @@ type Quote = {
   author: string
 }
 
-const QuoteList = () => {
-  const query = useQuery({
-    queryKey: ['quotes'],
+const QuoteSection = () => {
+  const [queryParam, setQueryParam] = useQueryParams({
+    search: StringParam,
+  })
+
+  const quoteListQuery = useQuery({
+    queryKey: ['quotes', queryParam.search],
     queryFn: async (): Promise<Quote[]> => {
+      const searchKeywords = queryParam?.search?.split(' ') ?? []
+
       const quoteDocuments = await getDocs(
         collection(db, 'users', auth.currentUser!.uid, 'quotes')
       )
+
       const quotes = quoteDocuments.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }))
+      })) as Quote[]
 
-      return quotes as Quote[]
+      const filteredQuotes = quotes.filter((quote) =>
+        searchKeywords.some((keyword) => {
+          const lowerCaseKeyword = keyword.toLowerCase()
+          return (
+            quote.content.toLowerCase().includes(lowerCaseKeyword) ||
+            quote.author.toLowerCase().includes(lowerCaseKeyword)
+          )
+        })
+      )
+
+      return searchKeywords.length > 0 ? filteredQuotes : quotes
     },
   })
 
-  if (!query.data) return null
-
   return (
-    <div className="flex flex-col gap-4">
-      {query.data.map((quote) => (
-        <QuoteBox key={quote.id} quote={quote} />
-      ))}
+    <div className="flex flex-col gap-4 h-full">
+      <Input
+        placeholder="Search quotes"
+        className="w-full"
+        onChange={(e) => {
+          if (e.target.value === '') return setQueryParam({ search: null })
+          setQueryParam({ search: e.target.value })
+        }}
+      />
+      {quoteListQuery.data && (
+        <div className="flex flex-col gap-4">
+          {quoteListQuery.data.map((quote) => (
+            <QuoteBox key={quote.id} quote={quote} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -103,6 +140,8 @@ const createQuoteSchema = z.object({
 type CreateQuoteForm = z.infer<typeof createQuoteSchema>
 
 const CreateQuoteForm = () => {
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+
   const form = useForm<CreateQuoteForm>({
     defaultValues: {
       content: '',
@@ -124,15 +163,66 @@ const CreateQuoteForm = () => {
     }
   }
 
+  if (!isDesktop) {
+    return (
+      <Drawer>
+        <DrawerTrigger asChild>
+          <Button className="w-full">Add Quote</Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
+              <div className="px-4">
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Content</FormLabel>
+                      <FormControl>
+                        <Textarea id="content" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="author"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Author</FormLabel>
+                      <FormControl>
+                        <Input id="author" type="text" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <DrawerFooter className="flex flex-col">
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full" type="button">
+                    Cancel
+                  </Button>
+                </DrawerClose>
+                <Button type="submit" variant="secondary" className="w-full">
+                  Create
+                </Button>
+              </DrawerFooter>
+            </form>
+          </Form>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full sm:w-[380px]"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
         <Card>
           <CardHeader>
-            <CardTitle>Create Quote</CardTitle>
+            <CardTitle>Add Quote</CardTitle>
           </CardHeader>
           <CardContent>
             <FormField
@@ -142,7 +232,7 @@ const CreateQuoteForm = () => {
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Input id="content" type="text" {...field} />
+                    <Textarea id="content" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
