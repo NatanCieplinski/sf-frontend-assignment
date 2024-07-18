@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { addDoc, collection, getDocs } from 'firebase/firestore'
-import { LogOutIcon } from 'lucide-react'
+import { ClipboardCheck, ClipboardCopy, LogOutIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { StringParam, useQueryParams } from 'use-query-params'
-import { useMediaQuery } from 'usehooks-ts'
+import { useCopyToClipboard, useMediaQuery } from 'usehooks-ts'
 import { z } from 'zod'
 import { Button } from '../components/button'
 import {
@@ -40,7 +41,7 @@ export const App = () => {
   const { logout } = useAuth()
 
   return (
-    <div className="flex flex-col gap-8 p-8 h-screen md:p-14 lg:p-20">
+    <div className="flex overflow-hidden flex-col gap-8 px-8 pt-8 h-screen md:px-14 md:pt-14 lg:px-20 lg:pt-20">
       <div className="flex justify-between w-full">
         <h1 className="text-2xl font-bold">My Quotes</h1>
         <Button
@@ -54,7 +55,7 @@ export const App = () => {
       </div>
 
       <div className="flex flex-col gap-10 h-full md:grid md:grid-cols-2">
-        <div className="overflow-scroll order-2 md:order-1 no-scrollbar">
+        <div className="overflow-hidden order-2 h-[calc(100%-152px)] md:order-1 md:h-[calc(100%-72px)]">
           <QuoteSection />
         </div>
         <div className="order-1 md:order-2">
@@ -115,7 +116,7 @@ const QuoteSection = () => {
         }}
       />
       {quoteListQuery.data && (
-        <div className="flex flex-col gap-4">
+        <div className="flex overflow-scroll flex-col gap-4 pb-8 h-full md:pb-14 lg:pb-20 no-scrollbar">
           {quoteListQuery.data.map((quote) => (
             <QuoteBox key={quote.id} quote={quote} />
           ))}
@@ -126,12 +127,32 @@ const QuoteSection = () => {
 }
 
 const QuoteBox = ({ quote }: { quote: Quote }) => {
+  const [_, copy] = useCopyToClipboard()
+
+  const [wasCopied, setWasCopied] = useState(false)
+
+  const textToCopy = `${quote.content}\n( ${quote.author} )`
+  const handleCopy = () => {
+    copy(textToCopy)
+    setWasCopied(true)
+    setTimeout(() => setWasCopied(false), 4000)
+  }
+
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm italic">{`"${quote.content}"`}</p>
-      <p className="flex justify-end w-full text-sm font-semibold text-gray-500">
-        {`— ${quote.author}`}
-      </p>
+    <div className="flex items-center rounded-md border">
+      <div className="flex flex-col gap-2 py-2 px-4 w-full">
+        <p className="text-sm italic">{`"${quote.content}"`}</p>
+        <div className="flex justify-between items-end w-full text-sm font-semibold text-gray-500">
+          <p>{`— ${quote.author}`}</p>
+          <Button size="icon-sm" variant="ghost" onClick={handleCopy}>
+            {wasCopied ? (
+              <ClipboardCheck className="w-4 h-4" />
+            ) : (
+              <ClipboardCopy className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
